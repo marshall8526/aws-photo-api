@@ -73,40 +73,44 @@ jobs:
 
       - name: Deploy on EC2 via SSH
         uses: appleboy/ssh-action@v0.1.10
+        env:
+          AWS_REGION: ${{ vars.AWS_REGION }}
+          NODE_ENV: ${{ vars.NODE_ENV }}
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_PORT: ${{ secrets.DB_PORT }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASS: ${{ secrets.DB_PASS }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+          DB_SSL: ${{ secrets.DB_SSL }}
+          S3_REGION: ${{ vars.S3_REGION }}
+          S3_BUCKET_NAME: ${{ vars.S3_BUCKET_NAME }}
+          S3_ACCESS_KEY: ${{ secrets.S3_ACCESS_KEY }}
+          S3_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_ACCESS_KEY }}
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
-          envs: AWS_REGION,AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY,NODE_ENV,DB_HOST,DB_PORT,DB_USER,DB_PASS,DB_NAME,DB_SSL,S3_REGION,S3_BUCKET_NAME,S3_ACCESS_KEY,S3_SECRET_ACCESS_KEY
+          envs: AWS_REGION,NODE_ENV,DB_HOST,DB_PORT,DB_USER,DB_PASS,DB_NAME,DB_SSL,S3_REGION,S3_BUCKET_NAME,S3_ACCESS_KEY,S3_SECRET_ACCESS_KEY
           script: |
-            echo "➡️ Logging into Amazon ECR"
-            aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin ${{ steps.login-ecr.outputs.registry }}
-
-            echo "⬇️ Pulling the new Docker image"
+            echo "⬇️ Pulling new Docker image"
             docker pull ${{ steps.build-image.outputs.image }}
 
-            echo "🧼 Stopping and removing previous container"
-            docker stop nest-app || true
-            docker rm nest-app || true
-
-            echo "🚀 Starting new container on port 80"
-            echo "DB_USER: $DB_USER"
-            echo "S3_REGION: $S3_REGION"
+            echo "🚀 Starting new container"
             docker run -d \
-            --name nest-app \
-            -p 80:3000 \
-            -e NODE_ENV \
-            -e DB_HOST \
-            -e DB_PORT \
-            -e DB_USER \
-            -e DB_PASS \
-            -e DB_NAME \
-            -e DB_SSL \
-            -e S3_REGION \
-            -e S3_BUCKET_NAME \
-            -e S3_ACCESS_KEY \
-            -e S3_SECRET_ACCESS_KEY \
-            ${{ steps.build-image.outputs.image }}
+              --name nest-app \
+              -p 80:3000 \
+              -e NODE_ENV \
+              -e DB_HOST \
+              -e DB_PORT \
+              -e DB_USER \
+              -e DB_PASS \
+              -e DB_NAME \
+              -e DB_SSL \
+              -e S3_REGION \
+              -e S3_BUCKET_NAME \
+              -e S3_ACCESS_KEY \
+              -e S3_SECRET_ACCESS_KEY \
+              ${{ steps.build-image.outputs.image }}
             echo "🔍 Checking container status..."
             sleep 5
             STATUS=$(docker inspect -f '{{.State.Status}}' nest-app)
