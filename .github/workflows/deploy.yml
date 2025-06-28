@@ -33,8 +33,8 @@ on:
     branches: ['main']
 
 env:
-  AWS_REGION: eu-west-2 # set this to your preferred AWS region, e.g. us-west-1
-  ECR_REPOSITORY: myproject/nest_api # set this to your Amazon ECR repository name
+  AWS_REGION: ${{ vars.AWS_REGION }}
+  ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY }}
 
 permissions:
   contents: read
@@ -77,7 +77,9 @@ jobs:
           host: ${{ secrets.EC2_HOST }}
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
-          envs: AWS_REGION,AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY
+          envs: AWS_REGION,AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY,
+            NODE_ENV,DB_HOST,DB_PORT,DB_USER,DB_PASS,DB_NAME,DB_SSL,
+            S3_REGION,S3_BUCKET_NAME,S3_ACCESS_KEY,S3_SECRET_ACCESS_KEY
           script: |
             echo "➡️ Logging into Amazon ECR"
             aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin ${{ steps.login-ecr.outputs.registry }}
@@ -93,4 +95,24 @@ jobs:
             docker run -d \
               --name nest-app \
               -p 80:3000 \
+              -e NODE_ENV=$NODE_ENV \
+              -e DB_HOST=$DB_HOST \
+              -e DB_PORT=$DB_PORT \
+              -e DB_USER=$DB_USER \
+              -e DB_PASS=$DB_PASS \
+              -e DB_NAME=$DB_NAME \
+              -e DB_SSL=$DB_SSL \
+              -e S3_REGION=$S3_REGION \
+              -e S3_BUCKET_NAME=$S3_BUCKET_NAME \
+              -e S3_ACCESS_KEY=$S3_ACCESS_KEY \
+              -e S3_SECRET_ACCESS_KEY=$S3_SECRET_ACCESS_KEY \
               ${{ steps.build-image.outputs.image }}
+                echo "🔍 Checking container status..."
+            sleep 5
+            STATUS=$(docker inspect -f '{{.State.Status}}' nest-app)
+            if [ "$STATUS" != "running" ]; then
+              echo "❌ Container failed to start. Status: $STATUS"
+              docker logs nest-app || true
+              exit 1
+            fi
+            echo "✅ Container is running."

@@ -12,7 +12,7 @@ export default new DataSource({
   password: process.env.DB_PASS,
   database: process.env.DB_NAME,
   synchronize: false,
-  ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
+  ssl: { rejectUnauthorized: false },
   migrations: [path.join(__dirname, './migrations/*{.ts,.js}')],
   entities: [path.join(__dirname, '../**/*.entity{.ts,.js}')],
 });
