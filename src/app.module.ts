@@ -4,7 +4,6 @@ import { AppService } from './app.service';
 import { PhotoModule } from './photo/photo.module';
 import { DatabaseModule } from './database/database.module';
 import { ConfigModule } from '@nestjs/config';
-import { S3Service } from './s3/s3.service';
 import { S3Module } from './s3/s3.module';
 
 @Module({
