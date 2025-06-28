@@ -90,7 +90,8 @@ jobs:
             docker rm nest-app || true
 
             echo "🚀 Starting new container on port 80"
-            echo "S3_BUCKET_NAME: $S3_BUCKET_NAME"
+            echo "DB_USER: $DB_USER"
+            echo "S3_REGION: $S3_REGION"
             docker run -d \
             --name nest-app \
             -p 80:3000 \
